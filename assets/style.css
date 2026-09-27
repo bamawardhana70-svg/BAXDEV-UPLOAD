@@ -178,6 +178,12 @@ h1.page-title{font-size:1.7rem;font-weight:800;letter-spacing:-.01em;margin:0 0 
 .stat-card .ic svg{width:15px;height:15px;color:var(--accent);}
 .stat-card .num{font-size:1.7rem;font-weight:800;line-height:1;}
 .stat-card .lbl{color:var(--text-dim);font-size:.78rem;margin-top:6px;}
+/* stat "Roblox User" bisa berupa ID panjang — font lebih kecil + boleh
+   patah baris, jangan sampai memaksa kartu jadi lebar. Bisa diklik buat
+   salin kalau ID-nya sudah diisi (.copyable). */
+.stat-card .num.num-id{font-size:1.05rem;line-height:1.3;word-break:break-all;}
+.stat-card .num.num-id.copyable{cursor:pointer;}
+.stat-card .num.num-id.copyable:hover{color:var(--accent);}
 
 .welcome-card{display:flex;align-items:center;gap:14px;background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:1px solid var(--glass-border);border-radius:var(--radius);padding:16px 18px;margin-bottom:22px;box-shadow:var(--glass-highlight),var(--glass-shadow);}
 .welcome-avatar{width:52px;height:52px;flex:none;border-radius:50%;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;color:var(--text-dim);}
@@ -281,6 +287,45 @@ textarea{min-height:96px;}
 .track-msg{font-size:.78rem;color:var(--text-dim);margin-top:8px;line-height:1.4;}
 .track-msg.err{color:var(--danger);}
 .empty-state{color:var(--text-dim);font-size:.88rem;padding:20px 4px;text-align:center;}
+
+/* ---------- Asset ID: baris ramping (bukan kotak lebar + ikon raksasa
+   tak terkontrol seperti sebelum ada CSS ini) + tombol salin kecil di
+   sampingnya. Dipakai di Library maupun panel sukses di halaman Upload. ---------- */
+.asset-id-row{display:flex;align-items:center;gap:6px;margin-bottom:10px;}
+.asset-id-link{
+  flex:1;min-width:0;display:flex;align-items:center;gap:7px;
+  padding:8px 12px;border-radius:999px;text-decoration:none;color:var(--text);
+  background:rgba(255,255,255,.04);border:1px solid var(--glass-border);
+  font-size:.78rem;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  transition:background .15s ease;
+}
+.asset-id-link:hover{background:rgba(255,255,255,.08);}
+.asset-id-lbl{color:var(--text-dim);font-weight:700;flex-shrink:0;font-size:.72rem;letter-spacing:.02em;}
+.asset-id-val{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;
+}
+.asset-id-link svg{width:13px;height:13px;flex-shrink:0;color:var(--text-dim);}
+.btn-copy-id{
+  flex-shrink:0;width:32px;height:32px;border-radius:50%;cursor:pointer;padding:0;
+  border:1px solid var(--glass-border);background:rgba(255,255,255,.04);color:var(--text-dim);
+  display:flex;align-items:center;justify-content:center;transition:background .15s ease,color .15s ease;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.btn-copy-id:hover{background:rgba(255,255,255,.1);color:var(--accent);}
+.btn-copy-id svg{width:14px;height:14px;}
+.asset-id-pending{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  margin-bottom:10px;padding:9px 12px;border-radius:999px;font-size:.76rem;
+  background:rgba(255,207,125,.09);border:1px solid rgba(255,207,125,.25);color:var(--warn);
+}
+.asset-id-pending .btn{padding:6px 12px;font-size:.72rem;flex-shrink:0;}
+
+/* ---------- panel sukses di halaman Upload: muncul di bagian bawah kartu
+   staging begitu publish berhasil, isinya Asset ID + tombol salin. ---------- */
+.publish-success{margin-top:4px;}
+.publish-success-actions{display:flex;gap:8px;margin-top:10px;}
+.publish-success-actions .btn{flex:1;padding:9px 14px;font-size:.82rem;}
 
 /* modal (menu sheet only, now that pages are separate) */
 .modal-veil{position:fixed;inset:0;background:rgba(4,7,10,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s ease;}
@@ -402,6 +447,21 @@ footer.foot{padding:10px 20px 8px;text-align:center;color:var(--text-faint);font
   body.page-dashboard .btn-row,
   body.page-dashboard .stats-grid{grid-column:1;}
   body.page-dashboard h1.hero{font-size:2.7rem;max-width:16ch;}
+
+  /* welcome-card jadi "hero circle" ala referensi: avatar Roblox dipusatkan,
+     dikasih cincin lembut di sekelilingnya (box-shadow, tidak menambah
+     ukuran layout) supaya berasa seperti lingkaran besar — tapi ukuran
+     avatarnya sendiri tetap ringkas, bukan raksasa. */
+  body.page-dashboard .welcome-card{flex-direction:column;text-align:center;padding:36px 22px 26px;}
+  body.page-dashboard .welcome-avatar{
+    width:124px;height:124px;margin-bottom:2px;
+    box-shadow:
+      0 0 0 8px rgba(143,233,212,.05),
+      0 0 0 18px rgba(143,233,212,.035),
+      0 0 0 30px rgba(143,233,212,.02);
+  }
+  body.page-dashboard .welcome-avatar svg{width:42px;height:42px;}
+  body.page-dashboard .welcome-text{text-align:center;}
 
   /* upload: form kiri, staging preview kanan (sticky saat scroll) */
   body.page-upload main{display:grid;grid-template-columns:1fr 1fr;column-gap:40px;align-items:start;}

@@ -116,6 +116,31 @@
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  /* ---------------- salin ke clipboard (dipakai di beberapa halaman) ---------------- */
+  // Dicoba lewat Clipboard API dulu (butuh secure context/HTTPS); kalau
+  // tidak tersedia (mis. http:// lokal atau browser lama), fallback ke
+  // textarea sementara + document.execCommand supaya tetap jalan.
+  async function copyText(text) {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /* ---------------- toast ---------------- */
   let toastTimer;
   function toast(msg, isErr) {
@@ -191,8 +216,24 @@
     if (planQuota) {
       planQuota.textContent = vip ? "Upload tanpa batas" : `${q.count}/${FREE_UPLOAD_LIMIT} upload terpakai`;
     }
-    const statPlanShort = document.getElementById("statPlanShort");
-    if (statPlanShort) statPlanShort.textContent = vip ? "VIP" : "Free";
+    // Kartu stat ketiga di Dashboard menampilkan Roblox User ID yang
+    // dipakai (dari Pengaturan), bukan label plan lagi — info plan sudah
+    // ada di plan-card di bawahnya. Bisa diklik buat salin ID kalau sudah diisi.
+    const statRobloxUser = document.getElementById("statRobloxUser");
+    if (statRobloxUser) {
+      const uid = String(getSettings().userId || "").trim();
+      statRobloxUser.textContent = uid ? "#" + uid : "—";
+      statRobloxUser.classList.toggle("copyable", !!uid);
+      if (!statRobloxUser.dataset.wired) {
+        statRobloxUser.dataset.wired = "1";
+        statRobloxUser.addEventListener("click", async () => {
+          const currentUid = String(getSettings().userId || "").trim();
+          if (!currentUid) return;
+          const ok = await copyText(currentUid);
+          toast(ok ? "User ID disalin" : "Gagal menyalin", !ok);
+        });
+      }
+    }
 
     const statTotal = document.getElementById("statTotal");
     if (statTotal) statTotal.textContent = library.length;
@@ -326,7 +367,7 @@
   global.Baxdev = {
     LS, FREE_UPLOAD_LIMIT, FREE_YT_LINKS, VIP_YT_LINKS, MAX_FILE_MB, MAX_ASSET_NAME, clampAssetName,
     getSettings, saveSettings, getVipList, saveVipList, getLibrary, saveLibrary,
-    getOwnerHash, setOwnerHash, getQuota, incrementQuota, isVIP, sha256, escapeHtml, statusLabel, toast,
+    getOwnerHash, setOwnerHash, getQuota, incrementQuota, isVIP, sha256, escapeHtml, statusLabel, toast, copyText,
     saveBlob, loadBlob, deleteBlob, renderPlanBadges
   };
 })(window);

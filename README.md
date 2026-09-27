@@ -32,9 +32,12 @@ assets/
   player.js       preview audio custom (play/pause, seek, waktu)
   roblox.js       publish + test koneksi (mode bawaan Cloudflare / proxy sendiri)
 functions/api/
-  roblox-upload.js   Function: proxy upload ke Roblox Open Cloud Assets API
-  roblox-test.js     Function: proxy cek kredensial ke Roblox Users API
-  roblox-profile.js  Function: proxy nama + avatar Roblox (dipakai ikon akun & welcome card dashboard)
+  roblox-upload.js      Function: proxy upload ke Roblox Open Cloud Assets API
+  roblox-test.js        Function: proxy cek kredensial ke Roblox Users API
+  roblox-profile.js     Function: proxy nama + avatar Roblox (dipakai ikon akun, welcome card, & hero avatar dashboard desktop)
+  roblox-asset-status.js Function: cek status operation Roblox yang masih pending (moderasi audio)
+  youtube-title.js      Function: ambil judul asli video lewat oEmbed resmi YouTube
+  youtube-download.js   Function: proxy convert YouTube -> MP3 lewat api.theresav.eu (server-side, API key tidak ke-expose ke browser)
 ```
 
 ## Deploy — harus Cloudflare Pages

@@ -152,11 +152,16 @@
           <span class="progress-pct">0%</span>
         </div>
         ${t.status==="published" && t.assetId ? `
-        <a class="asset-id-link" href="https://www.roblox.com/library/${encodeURIComponent(t.assetId)}" target="_blank" rel="noopener">
-          <span class="asset-id-lbl">Asset ID</span>
-          <span class="asset-id-val">${escapeHtml(t.assetId)}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>
-        </a>` : ""}
+        <div class="asset-id-row">
+          <a class="asset-id-link" href="https://www.roblox.com/library/${encodeURIComponent(t.assetId)}" target="_blank" rel="noopener" title="Buka di Roblox">
+            <span class="asset-id-lbl">ID</span>
+            <span class="asset-id-val">${escapeHtml(t.assetId)}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>
+          </a>
+          <button class="btn-copy-id" type="button" data-copy="${escapeHtml(t.assetId)}" title="Salin Asset ID" aria-label="Salin Asset ID">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+          </button>
+        </div>` : ""}
         ${t.status==="published" && !t.assetId && t.operationPath ? `
         <div class="asset-id-pending">
           <span>ID aset masih diproses Roblox (moderasi audio)...</span>
@@ -209,6 +214,14 @@
         renderPlanBadges();
       });
       row.querySelector(".btn-publish").addEventListener("click", ()=>publishTrack(id));
+
+      const btnCopyId = row.querySelector(".btn-copy-id");
+      if(btnCopyId){
+        btnCopyId.addEventListener("click", async ()=>{
+          const ok = await Baxdev.copyText(btnCopyId.dataset.copy);
+          toast(ok ? "Asset ID disalin" : "Gagal menyalin", !ok);
+        });
+      }
 
       const btnCheck = row.querySelector(".btn-check-status");
       if(btnCheck){

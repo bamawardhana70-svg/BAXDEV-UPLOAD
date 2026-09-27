@@ -324,9 +324,11 @@
     }
 
     if(result.ok){
+      pill.className = "status-pill status-published";
+      pill.textContent = "Published";
+      renderPublishSuccess(row, result.track || {}, onDone);
       toast(result.track && result.track.assetId ? `Berhasil dipublish — Asset ID: ${result.track.assetId}` : "Berhasil dipublish, ID aset masih diproses Roblox (cek di Library)");
       renderPlanBadges();
-      onDone();
       return;
     }
 
@@ -338,6 +340,62 @@
     msgEl.className = "track-msg err";
     msgEl.style.display = "block";
     toast(result.message || "Publish gagal", true);
+  }
+
+  /**
+   * Begitu publish sukses, kartu staging TIDAK langsung dibuang — nama/
+   * tombol publish-buang disembunyikan, diganti panel ramkas di bagian
+   * bawah berisi Asset ID + tombol salin (kalau sudah tersedia), supaya
+   * ID-nya bisa langsung disalin dari halaman Upload tanpa harus buka
+   * Library dulu. Kartu baru dibuang (cleanup/onDone) begitu user
+   * menekan "Selesai".
+   */
+  function renderPublishSuccess(row, track, onDone){
+    const nameInput = row.querySelector(".stg-name");
+    const nameCount = row.querySelector(".stg-name-count");
+    if(nameInput) nameInput.style.display = "none";
+    if(nameCount) nameCount.style.display = "none";
+    const actions = row.querySelector(".track-actions");
+    if(actions) actions.style.display = "none";
+
+    const panel = document.createElement("div");
+    panel.className = "publish-success";
+    if(track.assetId){
+      panel.innerHTML = `
+        <div class="asset-id-row">
+          <a class="asset-id-link" href="https://www.roblox.com/library/${encodeURIComponent(track.assetId)}" target="_blank" rel="noopener" title="Buka di Roblox">
+            <span class="asset-id-lbl">ID</span>
+            <span class="asset-id-val">${escapeHtml(track.assetId)}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>
+          </a>
+          <button class="btn-copy-id" type="button" data-copy="${escapeHtml(track.assetId)}" title="Salin Asset ID" aria-label="Salin Asset ID">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>
+          </button>
+        </div>
+        <div class="publish-success-actions">
+          <a class="btn btn-ghost" href="library.html">Buka Library</a>
+          <button class="btn btn-primary btn-done" type="button">Selesai</button>
+        </div>
+      `;
+    }else{
+      panel.innerHTML = `
+        <p class="hint" style="margin-top:0;">ID aset masih diproses Roblox (moderasi audio) — cek di Library begitu selesai.</p>
+        <div class="publish-success-actions">
+          <a class="btn btn-ghost" href="library.html">Buka Library</a>
+          <button class="btn btn-primary btn-done" type="button">Selesai</button>
+        </div>
+      `;
+    }
+    row.appendChild(panel);
+
+    const copyBtn = panel.querySelector("[data-copy]");
+    if(copyBtn){
+      copyBtn.addEventListener("click", async ()=>{
+        const ok = await Baxdev.copyText(copyBtn.dataset.copy);
+        toast(ok ? "Asset ID disalin" : "Gagal menyalin", !ok);
+      });
+    }
+    panel.querySelector(".btn-done").addEventListener("click", onDone);
   }
 
   /* ---------- file upload ---------- */
@@ -410,31 +468,38 @@
   });
 
   async function convertOneYoutubeLink(url){
-    const apiUrl = `https://fytaan.vercel.app/api/download/youtube?apikey=xtan&url=${encodeURIComponent(url)}&type=audio&quality=720p`;
     try{
-      // Judul resmi (oEmbed) dan file audio (fytaan) diambil paralel — keduanya
-      // independen, jadi tidak perlu tunggu bergantian.
+      // Judul resmi (oEmbed) dan file audio (/api/youtube-download, proxy
+      // server-side) diambil paralel — keduanya independen, jadi tidak
+      // perlu tunggu bergantian.
       const [officialTitle, res] = await Promise.all([
         fetchYoutubeTitle(url),
-        fetch(apiUrl)
+        fetch("/api/youtube-download", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ url })
+        })
       ]);
-      if(!res.ok){ toast(`Gagal convert (HTTP ${res.status}): ${url}`, true); return; }
-      const data = await res.json().catch(()=>null);
-      if(!data){ toast("Respons API bukan JSON — cek endpoint fytaan", true); return; }
-      // This third-party API's response shape isn't documented anywhere we can verify,
-      // so we probe common field names defensively instead of assuming one. Its "title"
-      // field is now only a fallback — officialTitle (dari oEmbed YouTube resmi) is
-      // the primary source of truth for the asset name.
-      const downloadUrl = data.url || data.downloadUrl || (data.result && data.result.url) || (data.data && data.data.url);
-      const apiTitle = data.title || (data.result && data.result.title) || (data.data && data.data.title);
-      if(!downloadUrl){
-        console.warn("fytaan response (unrecognized shape):", data);
-        toast("Tidak menemukan URL audio di respons API — lihat console", true);
+
+      if(res.status === 404){
+        toast("Endpoint /api/youtube-download tidak ditemukan. Fitur ini aktif otomatis setelah situs di-deploy ke Cloudflare Pages (folder functions/ ikut ter-deploy).", true);
         return;
       }
-      const audioRes = await fetch(downloadUrl);
-      if(!audioRes.ok) throw new Error("Gagal mengunduh hasil convert (HTTP " + audioRes.status + ")");
-      const blob = await audioRes.blob();
+
+      const contentType = res.headers.get("content-type") || "";
+      const isAudio = /^audio\//i.test(contentType) || /^application\/octet-stream/i.test(contentType);
+
+      if(!isAudio){
+        // Bukan audio -> function membalas JSON error (lihat functions/api/youtube-download.js).
+        const data = await res.json().catch(()=>null);
+        toast((data && data.message) || `Gagal convert (HTTP ${res.status}): ${url}`, true);
+        return;
+      }
+      if(!res.ok){ toast(`Gagal convert (HTTP ${res.status}): ${url}`, true); return; }
+
+      const blob = await res.blob();
+      const rawTitle = res.headers.get("x-audio-title");
+      const apiTitle = rawTitle ? decodeURIComponent(rawTitle) : null;
 
       let finalTitle = officialTitle || apiTitle;
       let titleWarning = false;
@@ -455,7 +520,7 @@
       }
     }catch(err){
       console.error(err);
-      toast("Gagal menghubungi API convert — kemungkinan diblokir CORS atau server sedang down", true);
+      toast("Gagal menghubungi API convert — cek koneksi internet atau server sedang down", true);
     }
   }
 })();
