@@ -33,6 +33,13 @@ export async function onRequestPost(context) {
   if (!userId || !apiKey) {
     return json({ ok: false, message: "userId dan apiKey wajib diisi." }, 400);
   }
+  if (file.size === 0) {
+    return json({ ok: false, message: "File audio kosong (0 byte) — coba upload ulang dari halaman Upload." }, 400);
+  }
+  const MAX_BYTES = 20 * 1024 * 1024; // sama dengan batas di upload.html (MAX_FILE_MB)
+  if (file.size > MAX_BYTES) {
+    return json({ ok: false, message: "File audio melebihi batas 20MB." }, 400);
+  }
 
   const requestPayload = {
     assetType,
@@ -42,7 +49,15 @@ export async function onRequestPost(context) {
   };
 
   const upstream = new FormData();
-  upstream.append("request", new Blob([JSON.stringify(requestPayload)], { type: "application/json" }));
+  // PENTING: "request" harus di-append sebagai string biasa, BUKAN dibungkus
+  // Blob. FormData.append(name, blobValue) selalu menyertakan atribut
+  // `filename` (default "blob") begitu value-nya sebuah Blob — itu membuat
+  // Roblox membaca part ini sebagai file, bukan field JSON biasa, sehingga
+  // "request" dianggap kosong walau fileContent-nya sendiri valid (persis
+  // pesan error "Request body cannot be empty" yang muncul). Contoh resmi
+  // Roblox (curl --form 'request={...}') juga mengirim field ini tanpa
+  // filename maupun content-type eksplisit.
+  upstream.append("request", JSON.stringify(requestPayload));
   upstream.append("fileContent", file, file.name || "audio");
 
   let res;

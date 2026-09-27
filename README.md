@@ -34,6 +34,7 @@ assets/
 functions/api/
   roblox-upload.js   Function: proxy upload ke Roblox Open Cloud Assets API
   roblox-test.js     Function: proxy cek kredensial ke Roblox Users API
+  roblox-profile.js  Function: proxy nama + avatar Roblox (dipakai ikon akun & welcome card dashboard)
 ```
 
 ## Deploy — harus Cloudflare Pages
@@ -66,6 +67,14 @@ tidak ditemukan"), bukan pura-pura berhasil dan bukan pula diam-diam lari ke jal
 Tombol **Cek Koneksi** di Pengaturan memanggil `/api/roblox-test` (Function ini yang
 lalu memanggil `GET https://apis.roblox.com/cloud/v2/users/{userId}` di server) untuk
 verifikasi kredensial asli.
+
+Avatar di ikon akun (topbar) dan kartu "Selamat datang kembali" di Dashboard sama-sama
+lewat `/api/roblox-profile`, yang di server memanggil Users API (nama) dan Thumbnails
+API (avatar) sekaligus. Ini juga proxy server-side seperti dua di atas — thumbnails.roblox.com
+tidak mengirim header CORS ke browser, jadi kalau dipanggil langsung dari client selalu
+gagal diam-diam. Kartu welcome cuma muncul kalau User ID + API Key di Pengaturan valid
+dan Roblox berhasil dihubungi; kalau belum "login" atau gagal, kartu tetap disembunyikan
+(tidak menampilkan state error di Dashboard).
 
 ## Publish langsung dari halaman Upload
 

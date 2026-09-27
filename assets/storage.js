@@ -207,6 +207,29 @@
     });
   }
 
+  /* ---------------- profil Roblox (nama + avatar), sekali fetch per halaman ---------------- */
+  // Dipakai bareng oleh mountAccountIcon dan mountWelcomeCard supaya cuma
+  // satu request /api/roblox-profile per page load, bukan dua.
+  let profilePromise = null;
+  function loadRobloxProfile() {
+    if (profilePromise) return profilePromise;
+    const settings = getSettings();
+    const uid = String(settings.userId || "").trim();
+    if (!settings.apiKey || !/^\d+$/.test(uid)) {
+      profilePromise = Promise.resolve(null); // belum "login"
+      return profilePromise;
+    }
+    profilePromise = fetch("/api/roblox-profile", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId: uid, apiKey: settings.apiKey })
+    })
+      .then((res) => res.json())
+      .then((data) => (data && data.ok ? data : null))
+      .catch(() => null);
+    return profilePromise;
+  }
+
   /* ---------------- account icon: avatar Roblox kalau sudah login ---------------- */
   const ACCOUNT_DEFAULT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.6 19.6c1.15-3.55 4.05-5.6 7.4-5.6s6.25 2.05 7.4 5.6"/></svg>';
 
@@ -234,23 +257,38 @@
     }
 
     showDefault(); // state awal: ikon avatar generik, bukan gear
-    const settings = getSettings();
-    const uid = String(settings.userId || "").trim();
-    if (!settings.apiKey || !/^\d+$/.test(uid)) return; // belum "login" -> tetap ikon default
+    loadRobloxProfile().then((profile) => {
+      if (profile && profile.avatarUrl) showAvatar(profile.avatarUrl);
+    });
+  }
 
-    // Coba Thumbnails API resmi dulu (butuh fetch, kadang kena CORS/network) —
-    // kalau gagal, fallback ke endpoint gambar langsung (jalan lewat <img src>
-    // tanpa perlu CORS sama sekali karena bukan dibaca lewat fetch/canvas).
-    fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${uid}&size=150x150&format=Png&isCircular=true`)
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("bad status"))))
-      .then((data) => {
-        const url = data && data.data && data.data[0] && data.data[0].imageUrl;
-        if (url) showAvatar(url);
-        else showAvatar(`https://www.roblox.com/headshot-thumbnail/image?userId=${uid}&width=150&height=150&format=png`);
-      })
-      .catch(() => {
-        showAvatar(`https://www.roblox.com/headshot-thumbnail/image?userId=${uid}&width=150&height=150&format=png`);
-      });
+  /* ---------------- dashboard welcome card: avatar + nama kalau sudah login ---------------- */
+  function mountWelcomeCard() {
+    const card = document.getElementById("welcomeCard");
+    if (!card) return; // cuma ada di index.html
+
+    loadRobloxProfile().then((profile) => {
+      if (!profile) return; // belum login / gagal ambil profil -> dashboard tetap bersih, card tetap disembunyikan
+      const avatarWrap = document.getElementById("welcomeAvatar");
+      if (avatarWrap) {
+        if (profile.avatarUrl) {
+          const img = document.createElement("img");
+          img.alt = "Avatar Roblox";
+          img.referrerPolicy = "no-referrer";
+          img.onerror = () => { avatarWrap.innerHTML = ACCOUNT_DEFAULT_SVG; };
+          img.src = profile.avatarUrl;
+          avatarWrap.innerHTML = "";
+          avatarWrap.appendChild(img);
+        } else {
+          avatarWrap.innerHTML = ACCOUNT_DEFAULT_SVG;
+        }
+      }
+      const nameEl = document.getElementById("welcomeName");
+      if (nameEl) nameEl.textContent = profile.displayName || profile.username || "";
+      const handleEl = document.getElementById("welcomeHandle");
+      if (handleEl) handleEl.textContent = profile.username ? "@" + profile.username : "";
+      card.style.display = "flex";
+    });
   }
 
   /* ---------------- generic menu-sheet plumbing ---------------- */
@@ -270,6 +308,7 @@
     highlightActiveNav();
     wireMenuSheet();
     mountAccountIcon();
+    mountWelcomeCard();
   });
 
   global.Baxdev = {

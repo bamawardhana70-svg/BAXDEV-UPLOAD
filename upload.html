@@ -134,6 +134,19 @@
 <script>
 (function(){
   "use strict";
+
+  // Kartu staging cuma hidup di variable JS halaman ini (stagingHandles di
+  // bawah), sengaja tidak disimpan ke localStorage. Tapi kalau user pindah
+  // ke halaman lain lalu balik lagi lewat tombol Back browser, mobile Safari/
+  // Chrome sering memulihkan halaman ini dari bfcache (snapshot beku, bukan
+  // reload asli) — DOM & variable lama ikut kepulihkan apa adanya, jadi
+  // kartu staging (termasuk yang sudah "Gagal") kelihatan masih nangkring
+  // padahal seharusnya halaman ini mulai bersih lagi. Reload paksa saat itu
+  // terjadi supaya script di atas jalan ulang dari awal dengan state kosong.
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) location.reload();
+  });
+
   const { isVIP, escapeHtml, toast, renderPlanBadges,
           FREE_YT_LINKS, VIP_YT_LINKS, MAX_FILE_MB } = Baxdev;
 
