@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BaxDev — Roblox Audio Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a1016'/%3E%3Ctext x='50' y='68' font-family='Arial' font-weight='900' font-size='58' fill='%237fe6d8' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="wave-field" aria-hidden="true">
+  <div class="glow"></div>
+  <svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke="rgba(140,220,205,0.09)" stroke-width="1">
+      <path d="M-50,120 C150,40 300,220 500,140 S800,60 900,150"/>
+      <path d="M-50,220 C150,140 300,320 500,240 S800,160 900,250"/>
+      <path d="M-50,600 C150,520 300,700 500,620 S800,540 900,630"/>
+      <path d="M-50,700 C150,620 300,800 500,720 S800,640 900,730"/>
+    </g>
+  </svg>
+</div>
+
+<div id="loader">
+  <div class="brand-mark"><span>Ba</span><span class="x">x</span><span>Dev</span></div>
+  <div class="bar"><i></i></div>
+</div>
+
+<div id="app">
+
+  <header class="topbar">
+    <a class="logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
+    <div class="topbar-actions">
+      <a class="icon-btn" href="settings.html" title="Akun Roblox" aria-label="Akun Roblox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.6 19.6c1.15-3.55 4.05-5.6 7.4-5.6s6.25 2.05 7.4 5.6"/></svg>
+      </a>
+      <button class="icon-btn" id="btnMenu" title="Menu" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <p class="eyebrow-plain">BaxDev / Roblox Audio Studio</p>
+    <h1 class="hero">Suara kamu,<br>siap dipakai di Roblox.</h1>
+    <p class="hero-sub">Convert audio dari file atau YouTube, atur kecepatan, lalu publish langsung jadi Roblox Asset — semua tersimpan di perangkat ini, tanpa akun.</p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="upload.html">Upload Audio</a>
+      <a class="btn btn-ghost" href="library.html">Buka Library</a>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <div class="num" id="statTotal">0</div>
+        <div class="lbl">Total Audio</div>
+      </div>
+      <div class="stat-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+        <div class="num" id="statPublished">0</div>
+        <div class="lbl">Published</div>
+      </div>
+      <div class="stat-card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg></div>
+        <div class="num" id="statPlanShort">Free</div>
+        <div class="lbl">Plan</div>
+      </div>
+    </div>
+
+    <div class="plan-card">
+      <div>
+        <div class="plan-lbl">AKUN INI</div>
+        <div class="plan-name" id="planName">Free Plan</div>
+        <div class="plan-quota" id="planQuota">0/10 publish hari ini</div>
+      </div>
+      <a class="btn btn-ghost" href="settings.html">Pengaturan</a>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item active">
+      <span class="nav-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+        Dashboard
+      </span>
+    </a>
+    <a href="upload.html" class="nav-item">
+      <span class="nav-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+        Upload
+      </span>
+    </a>
+    <a href="library.html" class="nav-item">
+      <span class="nav-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Library
+      </span>
+    </a>
+  </nav>
+</div>
+
+<!-- MENU SHEET -->
+<div class="modal-veil" id="veilMenu">
+  <div class="modal menu-sheet">
+    <div class="modal-head"><h3>Menu</h3><button class="icon-btn" data-close aria-label="Tutup">✕</button></div>
+    <a class="menu-item" href="owner.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg>
+      Owner Panel
+    </a>
+    <a class="menu-item" href="settings.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13.5a1.7 1.7 0 000-3l1-1.7-1.7-1.7-1.7 1a1.7 1.7 0 00-3 0l-1-1.7H10l-1 1.7a1.7 1.7 0 00-3 0l-1.7-1L2.6 8.8l1 1.7a1.7 1.7 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.7 1.7 0 003 0l1 1.7h3l1-1.7a1.7 1.7 0 003 0l1.7 1 1.7-1.7z"/></svg>
+      Pengaturan
+    </a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/storage.js"></script>
+<script>
+(function(){
+  "use strict";
+  const loader = document.getElementById("loader");
+  const brand = loader ? loader.querySelector(".brand-mark") : null;
+  const targetLogo = document.querySelector("header.topbar .logo");
+  if(!loader || !brand){ return; }
+
+  const SEEN_KEY = "baxdev_loader_seen";
+  let alreadySeen = false;
+  try{ alreadySeen = sessionStorage.getItem(SEEN_KEY) === "1"; }catch(e){ /* private mode dll — anggap belum pernah lihat */ }
+
+  if(alreadySeen){
+    // Sudah pernah nonton animasinya di sesi browser ini (tab/window yang sama) —
+    // langsung sembunyikan tanpa animasi, biar nggak nongol ulang tiap balik ke Dashboard.
+    loader.classList.add("gone");
+    return;
+  }
+  try{ sessionStorage.setItem(SEEN_KEY, "1"); }catch(e){ /* localStorage penuh/private mode — nggak fatal, animasi tetap jalan */ }
+
+  function flyToCorner(){
+    if(!targetLogo){ loader.classList.add("hidden"); return; }
+    const from = brand.getBoundingClientRect();
+    const to = targetLogo.getBoundingClientRect();
+    const scale = to.width / from.width;
+    const dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+    const dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+
+    loader.classList.add("collapsing"); // background + progress bar memudar
+    brand.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+
+    brand.addEventListener("transitionend", () => {
+      loader.classList.add("gone"); // sudah persis di posisi logo asli, sembunyikan instan
+    }, { once: true });
+  }
+
+  brand.addEventListener("animationend", () => {
+    brand.style.animation = "none";
+    void brand.offsetWidth; // paksa reflow supaya transform berikutnya benar-benar transisi
+    setTimeout(flyToCorner, 300);
+  }, { once: true });
+
+  // fallback kalau animationend tidak pernah tembak (mis. tab background)
+  setTimeout(() => {
+    if(!loader.classList.contains("gone")) loader.classList.add("hidden");
+  }, 3000);
+})();
+</script>
+</body>
+</html>

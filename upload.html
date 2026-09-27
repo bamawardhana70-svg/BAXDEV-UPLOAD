@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Upload Audio — BaxDev</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a1016'/%3E%3Ctext x='50' y='68' font-family='Arial' font-weight='900' font-size='58' fill='%237fe6d8' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="wave-field" aria-hidden="true">
+  <div class="glow"></div>
+  <svg viewBox="0 0 800 900" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke="rgba(140,220,205,0.09)" stroke-width="1">
+      <path d="M-50,120 C150,40 300,220 500,140 S800,60 900,150"/>
+      <path d="M-50,600 C150,520 300,700 500,620 S800,540 900,630"/>
+    </g>
+  </svg>
+</div>
+
+<div id="app" class="fade-in">
+
+  <header class="topbar">
+    <a class="logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
+    <div class="topbar-actions">
+      <a class="icon-btn" href="settings.html" title="Akun Roblox" aria-label="Akun Roblox">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.6 19.6c1.15-3.55 4.05-5.6 7.4-5.6s6.25 2.05 7.4 5.6"/></svg>
+      </a>
+      <button class="icon-btn" id="btnMenu" title="Menu" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <h1 class="page-title">Upload Audio</h1>
+    <p class="page-sub">Publish audio langsung ke Roblox Asset.</p>
+
+    <section class="card">
+      <div class="tabs">
+        <button class="tab active" data-tab="file">Upload file</button>
+        <button class="tab" data-tab="yt">YouTube URL</button>
+      </div>
+
+      <div class="panel active" id="panel-file">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Pilih file audio">
+          <div class="up-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
+          <p class="title">Drop file audio di sini</p>
+          <p class="sub">atau klik untuk pilih file</p>
+          <div class="fmt-row">
+            <span class="fmt-pill">MP3</span><span class="fmt-pill">WAV</span><span class="fmt-pill">OGG</span>
+            <span class="fmt-pill">FLAC</span><span class="fmt-pill">AAC</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept="audio/mpeg,audio/wav,audio/ogg,audio/flac,audio/aac,audio/x-flac,audio/x-wav,.mp3,.wav,.ogg,.flac,.aac" multiple>
+        <p class="hint">Maks 20MB per file. File masuk preview dulu — dengarkan kecepatannya sebelum dipublish ke Roblox.</p>
+      </div>
+
+      <div class="panel" id="panel-yt">
+        <label class="field-label">URL YOUTUBE</label>
+        <textarea id="ytLinks" placeholder="Tempel 1 link YouTube untuk Free. Premium bisa sampai 5 link, satu per baris."></textarea>
+        <button class="btn btn-primary btn-block" id="btnConvert" style="margin-top:14px;">Convert ke MP3</button>
+        <p class="hint">Nama asset otomatis mengikuti judul video kalau tersedia, dan tetap bisa kamu edit satu per satu di Library. Hanya video yang kamu miliki atau punya izin untuk digunakan.</p>
+        <div id="ytQuotaLock" class="quota-lock" style="display:none;"></div>
+      </div>
+
+      <div class="settings-block">
+        <h3>Kecepatan Playback</h3>
+        <div class="speed-grid">
+          <button class="speed-chip" data-speed="0.25">0.25×</button>
+          <button class="speed-chip" data-speed="0.5">0.5×</button>
+          <button class="speed-chip" data-speed="0.75">0.75×</button>
+          <button class="speed-chip active" data-speed="1">1×</button>
+          <button class="speed-chip" data-speed="1.25">1.25×</button>
+          <button class="speed-chip" data-speed="1.5">1.5×</button>
+          <button class="speed-chip" data-speed="1.75">1.75×</button>
+          <button class="speed-chip" data-speed="2">2×</button>
+        </div>
+        <p class="hint" style="margin-top:0;">Dengarkan preview di bawah secara real-time saat ganti kecepatan. Baru dibakukan jadi file (WAV untuk selain 1×) saat kamu tekan "Publish ke Roblox".</p>
+      </div>
+    </section>
+
+    <section class="card" id="stagingCard" style="display:none;">
+      <h2>Preview &amp; nama asset</h2>
+      <p class="card-sub">Ganti chip kecepatan di atas untuk dengar preview real-time, edit nama asset (maks 30 karakter), lalu publish ke Roblox. Cuma yang berhasil ter-publish yang masuk Library.</p>
+      <div id="stagingList"></div>
+    </section>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <span class="nav-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+        Dashboard
+      </span>
+    </a>
+    <a href="upload.html" class="nav-item active">
+      <span class="nav-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+        Upload
+      </span>
+    </a>
+    <a href="library.html" class="nav-item">
+      <span class="nav-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Library
+      </span>
+    </a>
+  </nav>
+</div>
+
+<div class="modal-veil" id="veilMenu">
+  <div class="modal menu-sheet">
+    <div class="modal-head"><h3>Menu</h3><button class="icon-btn" data-close aria-label="Tutup">✕</button></div>
+    <a class="menu-item" href="owner.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg>
+      Owner Panel
+    </a>
+    <a class="menu-item" href="settings.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13.5a1.7 1.7 0 000-3l1-1.7-1.7-1.7-1.7 1a1.7 1.7 0 00-3 0l-1-1.7H10l-1 1.7a1.7 1.7 0 00-3 0l-1.7-1L2.6 8.8l1 1.7a1.7 1.7 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.7 1.7 0 003 0l1 1.7h3l1-1.7a1.7 1.7 0 003 0l1.7 1 1.7-1.7z"/></svg>
+      Pengaturan
+    </a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/storage.js"></script>
+<script src="assets/audio-speed.js"></script>
+<script src="assets/roblox.js"></script>
+<script src="assets/player.js"></script>
+<script>
+(function(){
+  "use strict";
+  const { isVIP, escapeHtml, toast, renderPlanBadges,
+          FREE_YT_LINKS, VIP_YT_LINKS, MAX_FILE_MB } = Baxdev;
+
+  let currentSpeed = 1;
+  const stagingHandles = new Map(); // staging id -> { playerHandle, blob, meta }
+
+  document.querySelectorAll(".speed-chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      document.querySelectorAll(".speed-chip").forEach(c=>c.classList.remove("active"));
+      chip.classList.add("active");
+      currentSpeed = parseFloat(chip.dataset.speed);
+      // Live-update every staged (not-yet-committed) preview so switching
+      // chips is heard immediately, without waiting for WAV processing.
+      stagingHandles.forEach(s => s.playerHandle.setSpeed(currentSpeed));
+    });
+  });
+
+  document.querySelectorAll(".tab").forEach(tab=>{
+    tab.addEventListener("click", ()=>{
+      document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+      tab.classList.add("active");
+      document.getElementById("panel-"+tab.dataset.tab).classList.add("active");
+    });
+  });
+
+  function updateYtQuotaUi(){
+    const box = document.getElementById("ytQuotaLock");
+    if(isVIP()){ box.style.display = "none"; return; }
+    box.style.display = "block";
+    box.textContent = `Free plan: maksimal ${FREE_YT_LINKS} link YouTube per convert. Jadi VIP lewat Owner Panel untuk sampai ${VIP_YT_LINKS} link.`;
+  }
+  updateYtQuotaUi();
+  document.getElementById("ytLinks").addEventListener("focus", updateYtQuotaUi);
+
+  function stageItem(meta, blob){
+    const id = "stg_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+    const initialName = Baxdev.clampAssetName(meta.name);
+    document.getElementById("stagingCard").style.display = "block";
+
+    const row = document.createElement("div");
+    row.className = "track";
+    row.dataset.id = id;
+    row.innerHTML = `
+      <div class="track-top">
+        <div class="track-tags">
+          <span class="track-src">${meta.source === "youtube" ? "YOUTUBE" : "FILE"}</span>
+        </div>
+        <span class="status-pill status-draft">Preview</span>
+      </div>
+      <input class="text-input stg-name" placeholder="Nama asset" value="${escapeHtml(initialName)}" maxlength="30">
+      <p class="hint stg-name-count" style="margin-top:-8px;">${initialName.length}/30</p>
+      <div class="player-slot"></div>
+      <div class="progress-row" style="display:none;">
+        <div class="progress-bar"><i></i></div>
+        <span class="progress-pct">0%</span>
+      </div>
+      <div class="track-actions">
+        <button class="btn btn-primary btn-commit">Publish ke Roblox</button>
+        <button class="btn btn-ghost btn-discard">Buang</button>
+      </div>
+      <p class="track-msg" style="display:none;"></p>
+    `;
+    document.getElementById("stagingList").appendChild(row);
+
+    const playerHandle = BaxdevPlayer.mount(row.querySelector(".player-slot"), blob, { initialSpeed: currentSpeed });
+    stagingHandles.set(id, { playerHandle, blob, meta });
+
+    const nameInput = row.querySelector(".stg-name");
+    const nameCount = row.querySelector(".stg-name-count");
+    nameInput.addEventListener("input", ()=>{ nameCount.textContent = `${nameInput.value.length}/30`; });
+
+    function cleanup(){
+      playerHandle.destroy();
+      stagingHandles.delete(id);
+      row.remove();
+      if(!stagingHandles.size) document.getElementById("stagingCard").style.display = "none";
+    }
+
+    row.querySelector(".btn-discard").addEventListener("click", cleanup);
+    row.querySelector(".btn-commit").addEventListener("click", async ()=>{
+      const staged = stagingHandles.get(id);
+      const finalName = Baxdev.clampAssetName(nameInput.value);
+      await publishStaged(row, id, { ...staged.meta, name: finalName }, staged.blob, cleanup);
+    });
+  }
+
+  /**
+   * Diproses kecepatan lalu langsung di-publish ke Roblox. Track HANYA
+   * ditulis ke Library kalau upload-nya sukses — kalau gagal, kartu
+   * staging tetap tampil dengan pesan error supaya bisa dicoba lagi,
+   * tanpa pernah masuk Library sebagai draft.
+   */
+  async function publishStaged(row, stagingId, meta, blob, onDone){
+    const btn = row.querySelector(".btn-commit");
+    const pill = row.querySelector(".status-pill");
+    const progRow = row.querySelector(".progress-row");
+    const progBar = row.querySelector(".progress-bar i");
+    const progPct = row.querySelector(".progress-pct");
+    const msgEl = row.querySelector(".track-msg");
+
+    btn.disabled = true;
+    btn.textContent = "Memproses...";
+    msgEl.style.display = "none";
+
+    let final;
+    try{
+      final = await BaxdevAudio.applySpeed(blob, currentSpeed);
+    }catch(err){
+      console.error(err);
+      final = { blob, mime: blob.type || "audio/mpeg", processed:false };
+    }
+
+    pill.className = "status-pill status-publishing";
+    pill.textContent = "Publishing…";
+    btn.textContent = "Mempublish...";
+    progRow.style.display = "flex";
+    progBar.style.width = "0%";
+    progPct.textContent = "0%";
+
+    const result = await BaxdevRoblox.publishNewTrack(
+      { ...meta, speed: currentSpeed },
+      final.blob,
+      { onProgress(pct){ progBar.style.width = pct + "%"; progPct.textContent = pct + "%"; } }
+    );
+
+    progRow.style.display = "none";
+
+    if(result.code === "missing_settings"){
+      toast(result.message, true);
+      location.href = "settings.html";
+      return;
+    }
+    if(result.code === "quota"){
+      toast(result.message, true);
+      pill.className = "status-pill status-draft";
+      pill.textContent = "Preview";
+      btn.disabled = false;
+      btn.textContent = "Publish ke Roblox";
+      return;
+    }
+
+    if(result.ok){
+      toast("Berhasil dipublish ke Roblox");
+      renderPlanBadges();
+      onDone();
+      return;
+    }
+
+    pill.className = "status-pill status-failed";
+    pill.textContent = "Gagal";
+    btn.disabled = false;
+    btn.textContent = "Coba Lagi";
+    msgEl.textContent = result.message || "Publish gagal.";
+    msgEl.className = "track-msg err";
+    msgEl.style.display = "block";
+    toast(result.message || "Publish gagal", true);
+  }
+
+  /* ---------- file upload ---------- */
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+  const ACCEPTED_EXT = ["mp3","wav","ogg","flac","aac"];
+
+  dropzone.addEventListener("click", ()=>fileInput.click());
+  dropzone.addEventListener("keydown", e=>{ if(e.key==="Enter" || e.key===" ") fileInput.click(); });
+  dropzone.addEventListener("dragover", e=>{ e.preventDefault(); dropzone.classList.add("drag"); });
+  dropzone.addEventListener("dragleave", ()=>dropzone.classList.remove("drag"));
+  dropzone.addEventListener("drop", e=>{ e.preventDefault(); dropzone.classList.remove("drag"); handleFiles(e.dataTransfer.files); });
+  fileInput.addEventListener("change", e=>handleFiles(e.target.files));
+
+  async function handleFiles(fileList){
+    for(const file of Array.from(fileList)){
+      const ext = file.name.split(".").pop().toLowerCase();
+      if(!ACCEPTED_EXT.includes(ext)){ toast(`Format .${ext} tidak didukung`, true); continue; }
+      if(file.size > MAX_FILE_MB * 1024 * 1024){ toast(`${file.name} melebihi ${MAX_FILE_MB}MB`, true); continue; }
+      stageItem({ name: file.name.replace(/\.[^.]+$/, ""), source: "file" }, file);
+    }
+    toast("Preview siap — dengarkan lalu publish ke Roblox");
+  }
+
+  /* ---------- YouTube -> MP3 ---------- */
+  const YT_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)[\w-]+/i;
+
+  document.getElementById("btnConvert").addEventListener("click", async ()=>{
+    const raw = document.getElementById("ytLinks").value.trim();
+    if(!raw){ toast("Tempel minimal 1 link YouTube", true); return; }
+    const links = raw.split("\n").map(s=>s.trim()).filter(Boolean);
+    const limit = isVIP() ? VIP_YT_LINKS : FREE_YT_LINKS;
+    if(links.length > limit){ toast(`Maksimal ${limit} link untuk akun ${isVIP()?"Premium":"Free"} kamu`, true); return; }
+    const invalid = links.filter(l=>!YT_REGEX.test(l));
+    if(invalid.length){ toast("Ada link yang bukan URL YouTube yang valid", true); return; }
+
+    const btn = document.getElementById("btnConvert");
+    const original = btn.textContent;
+    btn.disabled = true;
+    for(let i=0;i<links.length;i++){
+      btn.textContent = `Converting ${i+1}/${links.length}...`;
+      await convertOneYoutubeLink(links[i]);
+    }
+    btn.disabled = false;
+    btn.textContent = original;
+    document.getElementById("ytLinks").value = "";
+  });
+
+  async function convertOneYoutubeLink(url){
+    const apiUrl = `https://fytaan.vercel.app/api/download/youtube?apikey=xtan&url=${encodeURIComponent(url)}&type=audio&quality=720p`;
+    try{
+      const res = await fetch(apiUrl);
+      if(!res.ok){ toast(`Gagal convert (HTTP ${res.status}): ${url}`, true); return; }
+      const data = await res.json().catch(()=>null);
+      if(!data){ toast("Respons API bukan JSON — cek endpoint fytaan", true); return; }
+      // This third-party API's response shape isn't documented anywhere we can verify,
+      // so we probe common field names defensively instead of assuming one.
+      const downloadUrl = data.url || data.downloadUrl || (data.result && data.result.url) || (data.data && data.data.url);
+      const title = data.title || (data.result && data.result.title) || (data.data && data.data.title);
+      if(!downloadUrl){
+        console.warn("fytaan response (unrecognized shape):", data);
+        toast("Tidak menemukan URL audio di respons API — lihat console", true);
+        return;
+      }
+      const audioRes = await fetch(downloadUrl);
+      if(!audioRes.ok) throw new Error("Gagal mengunduh hasil convert (HTTP " + audioRes.status + ")");
+      const blob = await audioRes.blob();
+      const finalTitle = title || `YouTube Audio ${new Date().toLocaleTimeString("id-ID")}`;
+      // Nama asset dan deskripsi sama-sama pakai judul asli dari YouTube (bukan
+      // di-generate) — nama akan dipotong 30 karakter cuma untuk kebutuhan
+      // display name Roblox (via clampAssetName di stageItem), sementara
+      // deskripsi tetap menyimpan judul lengkap yang tidak terpotong.
+      stageItem({ name: finalTitle, description: finalTitle, source: "youtube" }, blob);
+      toast("Convert berhasil — dengarkan preview lalu publish ke Roblox");
+    }catch(err){
+      console.error(err);
+      toast("Gagal menghubungi API convert — kemungkinan diblokir CORS atau server sedang down", true);
+    }
+  }
+})();
+</script>
+</body>
+</html>

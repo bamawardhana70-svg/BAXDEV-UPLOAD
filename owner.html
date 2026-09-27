@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Owner Panel — BaxDev</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a1016'/%3E%3Ctext x='50' y='68' font-family='Arial' font-weight='900' font-size='58' fill='%237fe6d8' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="wave-field" aria-hidden="true">
+  <div class="glow"></div>
+</div>
+
+<div id="app" class="fade-in">
+
+  <header class="topbar">
+    <a class="logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
+    <div class="topbar-actions">
+      <a class="icon-btn" href="index.html" title="Tutup" aria-label="Tutup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main>
+    <h1 class="page-title">Owner Panel</h1>
+    <p class="page-sub">Kelola daftar Roblox User ID yang dapat status VIP.</p>
+
+    <!-- LOCKED: setup password (first time) -->
+    <section class="card owner-locked" id="setupCard">
+      <h2>Buat Password Owner</h2>
+      <p class="card-sub">Belum ada password owner di perangkat ini. Buat satu untuk mengunci halaman ini.</p>
+      <div class="field"><label>Password baru</label><input class="text-input" id="setupPass" type="password" placeholder="Minimal 4 karakter"></div>
+      <div class="field"><label>Konfirmasi password</label><input class="text-input" id="setupPassConfirm" type="password" placeholder="Ulangi password"></div>
+      <p class="track-msg err" id="setupError" style="display:none;"></p>
+      <button class="btn btn-primary btn-block" id="btnSetup">Buat &amp; Masuk</button>
+    </section>
+
+    <!-- LOCKED: enter password -->
+    <section class="card owner-locked" id="unlockCard">
+      <h2>Masuk Owner Panel</h2>
+      <div class="field"><label>Password owner</label><input class="text-input" id="unlockPass" type="password" placeholder="Password"></div>
+      <p class="track-msg err" id="unlockError" style="display:none;"></p>
+      <button class="btn btn-primary btn-block" id="btnUnlock">Masuk</button>
+    </section>
+
+    <!-- UNLOCKED -->
+    <section class="card owner-unlocked" id="panelCard">
+      <h2>Kelola VIP</h2>
+      <p class="card-sub">User ID Roblox di daftar ini otomatis dapat status Premium (5 link YouTube per batch, tanpa batas publish harian) di perangkat mereka masing-masing.</p>
+      <div class="add-row">
+        <input class="text-input" id="inVipId" placeholder="Roblox User ID" inputmode="numeric">
+        <button class="btn btn-primary" id="btnAddVip">Add</button>
+      </div>
+      <hr class="divider">
+      <div id="vipList"></div>
+    </section>
+
+    <section class="card owner-unlocked" id="dangerCard">
+      <h2>Reset Password</h2>
+      <p class="card-sub">Buat password owner baru untuk perangkat ini.</p>
+      <div class="field"><label>Password baru</label><input class="text-input" id="resetPass" type="password" placeholder="Minimal 4 karakter"></div>
+      <div class="field"><label>Konfirmasi password</label><input class="text-input" id="resetPassConfirm" type="password" placeholder="Ulangi password"></div>
+      <p class="track-msg err" id="resetError" style="display:none;"></p>
+      <button class="btn btn-danger btn-block" id="btnReset">Reset Password Owner</button>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="assets/storage.js"></script>
+<script>
+(function(){
+  "use strict";
+  const { getOwnerHash, setOwnerHash, getVipList, saveVipList, sha256, escapeHtml, toast } = Baxdev;
+
+  function showLockedView(mode){
+    // mode: 'setup' | 'unlock'
+    document.getElementById("setupCard").classList.toggle("show", mode === "setup");
+    document.getElementById("unlockCard").classList.toggle("show", mode === "unlock");
+    document.getElementById("panelCard").classList.remove("show");
+    document.getElementById("dangerCard").classList.remove("show");
+  }
+  function showUnlockedView(){
+    document.getElementById("setupCard").classList.remove("show");
+    document.getElementById("unlockCard").classList.remove("show");
+    document.getElementById("panelCard").classList.add("show");
+    document.getElementById("dangerCard").classList.add("show");
+    renderVipList();
+  }
+
+  // require the password every page load — no persisted "unlocked" flag
+  showLockedView(getOwnerHash() ? "unlock" : "setup");
+
+  document.getElementById("btnSetup").addEventListener("click", async ()=>{
+    const pass = document.getElementById("setupPass").value;
+    const confirm = document.getElementById("setupPassConfirm").value;
+    const err = document.getElementById("setupError");
+    err.style.display = "none";
+    if(!pass || pass.length < 4){ err.textContent = "Password minimal 4 karakter."; err.style.display = "block"; return; }
+    if(pass !== confirm){ err.textContent = "Konfirmasi password tidak cocok."; err.style.display = "block"; return; }
+    setOwnerHash(await sha256(pass));
+    toast("Password owner dibuat");
+    showUnlockedView();
+  });
+
+  document.getElementById("btnUnlock").addEventListener("click", async ()=>{
+    const pass = document.getElementById("unlockPass").value;
+    const err = document.getElementById("unlockError");
+    err.style.display = "none";
+    const hash = await sha256(pass);
+    if(hash !== getOwnerHash()){ err.textContent = "Password salah."; err.style.display = "block"; return; }
+    showUnlockedView();
+  });
+
+  document.getElementById("btnReset").addEventListener("click", async ()=>{
+    const pass = document.getElementById("resetPass").value;
+    const confirm = document.getElementById("resetPassConfirm").value;
+    const err = document.getElementById("resetError");
+    err.style.display = "none";
+    if(!pass || pass.length < 4){ err.textContent = "Password minimal 4 karakter."; err.style.display = "block"; return; }
+    if(pass !== confirm){ err.textContent = "Konfirmasi password tidak cocok."; err.style.display = "block"; return; }
+    setOwnerHash(await sha256(pass));
+    document.getElementById("resetPass").value = "";
+    document.getElementById("resetPassConfirm").value = "";
+    toast("Password owner diperbarui");
+  });
+
+  function renderVipList(){
+    const list = getVipList();
+    const el = document.getElementById("vipList");
+    if(!list.length){ el.innerHTML = '<p class="vip-empty">Belum ada VIP user ID.</p>'; return; }
+    el.innerHTML = list.map((v,i)=>`
+      <div class="vip-row">
+        <div><div class="uid">${escapeHtml(v.id)}</div>${v.addedAt ? `<div class="uid-note">Ditambahkan ${v.addedAt}</div>` : ""}</div>
+        <button class="btn btn-danger" data-i="${i}" style="padding:8px 14px;font-size:.78rem;">Hapus</button>
+      </div>
+    `).join("");
+    el.querySelectorAll("button[data-i]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const l = getVipList();
+        l.splice(Number(btn.dataset.i), 1);
+        saveVipList(l);
+        renderVipList();
+      });
+    });
+  }
+
+  document.getElementById("btnAddVip").addEventListener("click", ()=>{
+    const id = document.getElementById("inVipId").value.trim();
+    if(!id){ toast("Isi Roblox User ID dulu", true); return; }
+    const list = getVipList();
+    if(list.some(v=>String(v.id)===id)){ toast("User ID sudah ada di daftar VIP", true); return; }
+    list.push({ id, addedAt: new Date().toLocaleDateString("id-ID") });
+    saveVipList(list);
+    document.getElementById("inVipId").value = "";
+    renderVipList();
+    toast("VIP ditambahkan");
+  });
+})();
+</script>
+</body>
+</html>
