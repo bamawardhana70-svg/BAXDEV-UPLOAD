@@ -355,10 +355,11 @@
     const btn = document.getElementById("btnMenu");
     const veil = document.getElementById("veilMenu");
     if (!btn || !veil) return;
-    btn.addEventListener("click", () => veil.classList.add("open"));
-    veil.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => veil.classList.remove("open")));
+    btn.addEventListener("click", () => { veil.classList.add("open"); btn.classList.add("open"); });
+    const closeMenu = () => { veil.classList.remove("open"); btn.classList.remove("open"); };
+    veil.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", closeMenu));
     veil.addEventListener("click", (e) => {
-      if (e.target === veil) veil.classList.remove("open");
+      if (e.target === veil) closeMenu();
     });
   }
 
