@@ -7,6 +7,41 @@
 // server: it re-posts the file + credentials the client sends here to
 // Roblox and relays back a small JSON result. Nothing is logged, cached, or
 // persisted here — the API key only passes through this request.
+//
+// Create Asset (POST /v1/assets) itself only returns an Operation path
+// (operations/{id}) — the actual numeric assetId only shows up once that
+// operation is polled to completion via GET /v1/{operationPath}. So this
+// function polls that endpoint for a bounded window right after upload and
+// returns the resolved assetId when it's ready. If Roblox is still
+// processing/moderating past that window, it replies with pending:true and
+// the operationPath so the client can resolve it later via
+// /api/roblox-asset-status instead of the UI silently showing nothing.
+
+const POLL_ATTEMPTS = 6;
+const POLL_DELAY_MS = 1500;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function pollOperation(operationPath, apiKey) {
+  for (let i = 0; i < POLL_ATTEMPTS; i++) {
+    await sleep(POLL_DELAY_MS);
+    let res;
+    try {
+      res = await fetch(`https://apis.roblox.com/assets/v1/${operationPath}`, {
+        headers: { "x-api-key": apiKey }
+      });
+    } catch {
+      continue; // network hiccup mid-poll — try again next tick instead of giving up
+    }
+    if (!res.ok) continue;
+    let op = null;
+    try { op = await res.json(); } catch { continue; }
+    if (op && op.done) return op;
+  }
+  return null; // still not done after the poll window
+}
 
 export async function onRequestPost(context) {
   const { request } = context;
@@ -80,10 +115,35 @@ export async function onRequestPost(context) {
     return json({ ok: false, message: `Roblox menolak upload (HTTP ${res.status}): ${detail}` });
   }
 
+  const operationPath = data.path || null;
+  if (!operationPath) {
+    // Upload diterima tapi Roblox tidak mengembalikan operation path — tidak
+    // ada cara untuk resolve assetId sama sekali.
+    return json({ ok: true, message: "Terkirim ke Roblox Open Cloud.", assetId: null, operationPath: null });
+  }
+
+  const op = await pollOperation(operationPath, apiKey);
+  if (!op) {
+    // Masih diproses Roblox setelah jendela polling — bukan gagal, cuma
+    // belum selesai. Client menyimpan operationPath untuk dicek lagi nanti.
+    return json({
+      ok: true,
+      pending: true,
+      operationPath,
+      message: "Terkirim ke Roblox, masih diproses (moderasi audio). ID aset akan muncul begitu selesai."
+    });
+  }
+  if (op.error) {
+    return json({ ok: false, message: `Roblox menolak asset ini: ${op.error.message || "diblokir moderasi."}` });
+  }
+
+  const assetId = op.response && op.response.assetId ? String(op.response.assetId) : null;
+  const moderationState = op.response && op.response.moderationResult ? op.response.moderationResult.moderationState : null;
   return json({
     ok: true,
-    message: data.path ? `Terkirim ke Roblox. Operasi: ${data.path}` : "Terkirim ke Roblox Open Cloud.",
-    operationPath: data.path || null
+    assetId,
+    moderationState: moderationState || null,
+    message: assetId ? `Berhasil dipublish. Asset ID: ${assetId}` : "Terkirim ke Roblox Open Cloud."
   });
 }
 

@@ -1,9 +1,15 @@
 /*
   BaxDev — storage.js
   Shared across every page. Handles:
-  - localStorage for settings / VIP list / owner password hash / track metadata / daily quota
+  - localStorage for settings / VIP list / owner password hash / track metadata / upload quota
   - IndexedDB for the actual audio blobs (localStorage's ~5-10MB cap is not enough for audio,
     especially after speed-processing bakes a track down to raw WAV)
+
+  Quota upload: FREE_UPLOAD_LIMIT (10) adalah batas TOTAL seumur akun untuk
+  user biasa (bukan reset harian) — dihitung per Roblox User ID yang diisi
+  di Pengaturan, bukan per perangkat, supaya ganti-ganti User ID di
+  perangkat yang sama tidak "reset" jatah. VIP tidak kena batas ini sama
+  sekali.
 */
 (function (global) {
   "use strict";
@@ -16,7 +22,7 @@
     quota: "baxdev_quota"
   };
 
-  const FREE_DAILY_PUBLISH = 10;
+  const FREE_UPLOAD_LIMIT = 10;
   const FREE_YT_LINKS = 1;
   const VIP_YT_LINKS = 5;
   const MAX_FILE_MB = 20;
@@ -69,22 +75,25 @@
     localStorage.setItem(LS.ownerHash, h);
   }
 
-  function todayKey() {
-    return new Date().toDateString();
+  // Total upload seumur akun, per Roblox User ID — BUKAN reset harian.
+  // Disimpan sebagai map { [userId]: count } supaya kalau perangkat yang
+  // sama pernah dipakai untuk User ID lain, jatah masing-masing akun tetap
+  // terpisah dan tidak saling memotong.
+  function currentAccountKey() {
+    const uid = String(getSettings().userId || "").trim();
+    return uid || "_no_account_";
   }
   function getQuota() {
-    let q = readJSON(LS.quota, { date: "", count: 0 });
-    if (q.date !== todayKey()) {
-      q = { date: todayKey(), count: 0 };
-      writeJSON(LS.quota, q);
-    }
-    return q;
+    const totals = readJSON(LS.quota, {});
+    const key = currentAccountKey();
+    return { userId: key, count: totals[key] || 0 };
   }
   function incrementQuota() {
-    const q = getQuota();
-    q.count += 1;
-    writeJSON(LS.quota, q);
-    return q;
+    const totals = readJSON(LS.quota, {});
+    const key = currentAccountKey();
+    totals[key] = (totals[key] || 0) + 1;
+    writeJSON(LS.quota, totals);
+    return { userId: key, count: totals[key] };
   }
 
   function isVIP() {
@@ -180,7 +189,7 @@
     }
     const planQuota = document.getElementById("planQuota");
     if (planQuota) {
-      planQuota.textContent = vip ? "Publish tanpa batas harian" : `${q.count}/${FREE_DAILY_PUBLISH} publish hari ini`;
+      planQuota.textContent = vip ? "Upload tanpa batas" : `${q.count}/${FREE_UPLOAD_LIMIT} upload terpakai`;
     }
     const statPlanShort = document.getElementById("statPlanShort");
     if (statPlanShort) statPlanShort.textContent = vip ? "VIP" : "Free";
@@ -234,21 +243,24 @@
   const ACCOUNT_DEFAULT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.6 19.6c1.15-3.55 4.05-5.6 7.4-5.6s6.25 2.05 7.4 5.6"/></svg>';
 
   function mountAccountIcon() {
-    const btn = document.querySelector('a.icon-btn[href="settings.html"]');
-    if (!btn) return; // halaman ini (mis. settings/owner) nggak punya tombol akun di topbar
+    // [data-account-icon] bisa ada lebih dari satu node sekaligus per halaman
+    // (tombol akun di topbar buat tampilan HP, plus slot akun di sidebar buat
+    // tampilan desktop) — keduanya di-mount dari satu fetch profil yang sama.
+    const btns = document.querySelectorAll("[data-account-icon]");
+    if (!btns.length) return; // halaman ini (mis. settings/owner topbar lama) nggak punya slot akun
 
-    function showDefault() {
+    function showDefault(btn) {
       btn.innerHTML = ACCOUNT_DEFAULT_SVG;
       btn.title = "Akun Roblox";
       btn.setAttribute("aria-label", "Akun Roblox");
       btn.classList.remove("has-avatar");
     }
-    function showAvatar(url) {
+    function showAvatar(btn, url) {
       const img = document.createElement("img");
       img.className = "account-avatar-img";
       img.alt = "Avatar Roblox";
       img.referrerPolicy = "no-referrer";
-      img.onerror = showDefault; // link putus/avatar dihapus -> balik ke ikon default, jangan biarin broken image
+      img.onerror = () => showDefault(btn); // link putus/avatar dihapus -> balik ke ikon default, jangan biarin broken image
       img.src = url;
       btn.innerHTML = "";
       btn.appendChild(img);
@@ -256,9 +268,9 @@
       btn.title = "Akun Roblox";
     }
 
-    showDefault(); // state awal: ikon avatar generik, bukan gear
+    btns.forEach(showDefault); // state awal: ikon avatar generik, bukan gear
     loadRobloxProfile().then((profile) => {
-      if (profile && profile.avatarUrl) showAvatar(profile.avatarUrl);
+      if (profile && profile.avatarUrl) btns.forEach((btn) => showAvatar(btn, profile.avatarUrl));
     });
   }
 
@@ -312,7 +324,7 @@
   });
 
   global.Baxdev = {
-    LS, FREE_DAILY_PUBLISH, FREE_YT_LINKS, VIP_YT_LINKS, MAX_FILE_MB, MAX_ASSET_NAME, clampAssetName,
+    LS, FREE_UPLOAD_LIMIT, FREE_YT_LINKS, VIP_YT_LINKS, MAX_FILE_MB, MAX_ASSET_NAME, clampAssetName,
     getSettings, saveSettings, getVipList, saveVipList, getLibrary, saveLibrary,
     getOwnerHash, setOwnerHash, getQuota, incrementQuota, isVIP, sha256, escapeHtml, statusLabel, toast,
     saveBlob, loadBlob, deleteBlob, renderPlanBadges

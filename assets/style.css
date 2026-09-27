@@ -353,22 +353,65 @@ textarea{min-height:96px;}
 
 footer.foot{padding:10px 20px 8px;text-align:center;color:var(--text-faint);font-size:.78rem;}
 
-/* ---------- DESKTOP: bingkai app jadi kartu kaca mengambang ---------- */
-/* Di layar sempit (HP) #app tetap full-width transparan seperti biasa.
-   Mulai 701px, body jadi flex-center dan #app dibungkus jadi kartu kaca
-   yang elevated di atas wave-field, biar nggak keliatan kayak kolom mobile
-   nyasar di tengah layar kosong. */
-@media (min-width:701px){
-  body{display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:32px 24px;}
-  #app{
-    min-height:calc(100vh - 64px);
-    border:1px solid var(--glass-border);
-    border-radius:32px;
-    background:var(--glass-bg);
-    -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
-    box-shadow:0 40px 90px rgba(2,6,10,.55), inset 0 1px 0 rgba(255,255,255,.08);
+/* sidebar hanya untuk desktop — di HP tetap disembunyikan total */
+.sidebar{display:none;}
+
+/* ---------- DESKTOP: sidebar navigation, layout beda total dari HP ---------- */
+/* Di bawah 960px, halaman persis seperti tampilan HP (topbar + bottom-nav,
+   satu kolom). Mulai 960px: topbar & bottom-nav diganti sidebar kiri yang
+   selalu terlihat, dan tiap halaman dapat layout kolom sendiri lewat class
+   di <body> — bukan cuma kolom mobile yang di-center di layar lebar. */
+@media (min-width:960px){
+  :root{--sidebar-w:268px;}
+
+  header.topbar,.bottom-nav{display:none;}
+
+  .sidebar{
+    position:fixed;inset:0 auto 0 0;width:var(--sidebar-w);z-index:25;
+    display:flex;flex-direction:column;padding:30px 16px;
+    background:var(--glass-bg-soft);
+    -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);
+    border-right:1px solid var(--glass-border);
+    view-transition-name:app-sidebar;
   }
-  header.topbar{border-radius:32px 32px 0 0;}
+  .sidebar-logo{font-size:1.35rem;font-weight:800;letter-spacing:-.02em;display:flex;gap:1px;color:var(--text);text-decoration:none;padding:0 12px;margin-bottom:32px;}
+  .sidebar-logo .x{color:var(--accent);font-style:italic;transform:skewX(-8deg);}
+  .sidebar-nav{display:flex;flex-direction:column;gap:3px;}
+  .sidebar-link{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;color:var(--text-dim);text-decoration:none;font-weight:600;font-size:.92rem;transition:background .15s ease,color .15s ease;}
+  .sidebar-link svg{width:19px;height:19px;flex-shrink:0;}
+  .sidebar-link:hover{background:rgba(255,255,255,.06);color:var(--text);}
+  .sidebar-link.active{background:linear-gradient(160deg,rgba(189,243,230,.16),rgba(143,233,212,.09));color:var(--accent);}
+  .sidebar-divider{height:1px;background:var(--border);margin:16px 12px;}
+  .sidebar-spacer{flex:1;}
+  .sidebar-account{display:flex;align-items:center;gap:11px;padding:9px;border-radius:12px;text-decoration:none;border:1px solid var(--glass-border);background:rgba(255,255,255,.03);transition:background .15s ease;}
+  .sidebar-account:hover{background:rgba(255,255,255,.08);}
+  .sidebar-account .icon-btn{width:34px;height:34px;pointer-events:none;}
+  .sidebar-account-label{font-size:.82rem;font-weight:700;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  #app{margin-left:var(--sidebar-w);max-width:none;min-height:100vh;}
+  main{max-width:1180px;margin:0 auto;padding:56px 64px 72px;}
+  main.narrow{max-width:720px;}
+
+  /* dashboard: hero kiri, welcome/plan card jadi rail kanan */
+  body.page-dashboard main{display:grid;grid-template-columns:1fr 360px;column-gap:56px;align-items:start;}
+  body.page-dashboard .welcome-card,
+  body.page-dashboard .plan-card{grid-column:2;}
+  body.page-dashboard .eyebrow-plain,
+  body.page-dashboard h1.hero,
+  body.page-dashboard .hero-sub,
+  body.page-dashboard .btn-row,
+  body.page-dashboard .stats-grid{grid-column:1;}
+  body.page-dashboard h1.hero{font-size:2.7rem;max-width:16ch;}
+
+  /* upload: form kiri, staging preview kanan (sticky saat scroll) */
+  body.page-upload main{display:grid;grid-template-columns:1fr 1fr;column-gap:40px;align-items:start;}
+  body.page-upload h1.page-title,
+  body.page-upload .page-sub{grid-column:1/-1;}
+  body.page-upload #stagingCard{position:sticky;top:56px;}
+
+  /* library: grid kartu multi-kolom, bukan list satu kolom */
+  body.page-library #libraryList{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;align-items:start;}
+  body.page-library .track{margin-bottom:0;}
 }
 
 /* ---------- ANIMASI PERPINDAHAN HALAMAN (View Transitions API) ---------- */

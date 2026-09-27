@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a1016'/%3E%3Ctext x='50' y='68' font-family='Arial' font-weight='900' font-size='58' fill='%237fe6d8' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/style.css">
 </head>
-<body>
+<body class="page-upload">
 
 <div class="wave-field" aria-hidden="true">
   <div class="glow"></div>
@@ -19,12 +19,46 @@
   </svg>
 </div>
 
+<aside class="sidebar" aria-label="Navigasi utama">
+  <a class="sidebar-logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      Dashboard
+    </a>
+    <a href="upload.html" class="nav-item sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+      Upload
+    </a>
+    <a href="library.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Library
+    </a>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <nav class="sidebar-nav">
+    <a href="settings.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13.5a1.7 1.7 0 000-3l1-1.7-1.7-1.7-1.7 1a1.7 1.7 0 00-3 0l-1-1.7H10l-1 1.7a1.7 1.7 0 00-3 0l-1.7-1L2.6 8.8l1 1.7a1.7 1.7 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.7 1.7 0 003 0l1 1.7h3l1-1.7a1.7 1.7 0 003 0l1.7 1 1.7-1.7z"/></svg>
+      Pengaturan
+    </a>
+    <a href="owner.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg>
+      Owner Panel
+    </a>
+  </nav>
+  <div class="sidebar-spacer"></div>
+  <a class="sidebar-account" href="settings.html">
+    <span class="icon-btn" data-account-icon aria-hidden="true"></span>
+    <span class="sidebar-account-label">Akun Roblox</span>
+  </a>
+</aside>
+
 <div id="app" class="fade-in">
 
   <header class="topbar">
     <a class="logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
     <div class="topbar-actions">
-      <a class="icon-btn" href="settings.html" title="Akun Roblox" aria-label="Akun Roblox">
+      <a class="icon-btn" href="settings.html" data-account-icon title="Akun Roblox" aria-label="Akun Roblox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.6 19.6c1.15-3.55 4.05-5.6 7.4-5.6s6.25 2.05 7.4 5.6"/></svg>
       </a>
       <button class="icon-btn" id="btnMenu" title="Menu" aria-label="Menu">
@@ -290,7 +324,7 @@
     }
 
     if(result.ok){
-      toast("Berhasil dipublish ke Roblox");
+      toast(result.track && result.track.assetId ? `Berhasil dipublish — Asset ID: ${result.track.assetId}` : "Berhasil dipublish, ID aset masih diproses Roblox (cek di Library)");
       renderPlanBadges();
       onDone();
       return;
@@ -330,6 +364,29 @@
 
   /* ---------- YouTube -> MP3 ---------- */
   const YT_REGEX = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)[\w-]+/i;
+  const YT_ID_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{6,})/i;
+
+  function extractYoutubeId(url){
+    const m = url.match(YT_ID_REGEX);
+    return m ? m[1] : null;
+  }
+
+  /**
+   * Judul resmi dari oEmbed YouTube sendiri (via /api/youtube-title, server-side
+   * supaya tidak kena CORS) — sumber nama asset yang akurat, lepas dari apa pun
+   * yang dibalas API convert pihak ketiga.
+   */
+  async function fetchYoutubeTitle(url){
+    try{
+      const res = await fetch("/api/youtube-title", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json().catch(()=>null);
+      return (data && data.ok && data.title) ? data.title : null;
+    }catch(e){ return null; }
+  }
 
   document.getElementById("btnConvert").addEventListener("click", async ()=>{
     const raw = document.getElementById("ytLinks").value.trim();
@@ -355,14 +412,21 @@
   async function convertOneYoutubeLink(url){
     const apiUrl = `https://fytaan.vercel.app/api/download/youtube?apikey=xtan&url=${encodeURIComponent(url)}&type=audio&quality=720p`;
     try{
-      const res = await fetch(apiUrl);
+      // Judul resmi (oEmbed) dan file audio (fytaan) diambil paralel — keduanya
+      // independen, jadi tidak perlu tunggu bergantian.
+      const [officialTitle, res] = await Promise.all([
+        fetchYoutubeTitle(url),
+        fetch(apiUrl)
+      ]);
       if(!res.ok){ toast(`Gagal convert (HTTP ${res.status}): ${url}`, true); return; }
       const data = await res.json().catch(()=>null);
       if(!data){ toast("Respons API bukan JSON — cek endpoint fytaan", true); return; }
       // This third-party API's response shape isn't documented anywhere we can verify,
-      // so we probe common field names defensively instead of assuming one.
+      // so we probe common field names defensively instead of assuming one. Its "title"
+      // field is now only a fallback — officialTitle (dari oEmbed YouTube resmi) is
+      // the primary source of truth for the asset name.
       const downloadUrl = data.url || data.downloadUrl || (data.result && data.result.url) || (data.data && data.data.url);
-      const title = data.title || (data.result && data.result.title) || (data.data && data.data.title);
+      const apiTitle = data.title || (data.result && data.result.title) || (data.data && data.data.title);
       if(!downloadUrl){
         console.warn("fytaan response (unrecognized shape):", data);
         toast("Tidak menemukan URL audio di respons API — lihat console", true);
@@ -371,13 +435,24 @@
       const audioRes = await fetch(downloadUrl);
       if(!audioRes.ok) throw new Error("Gagal mengunduh hasil convert (HTTP " + audioRes.status + ")");
       const blob = await audioRes.blob();
-      const finalTitle = title || `YouTube Audio ${new Date().toLocaleTimeString("id-ID")}`;
+
+      let finalTitle = officialTitle || apiTitle;
+      let titleWarning = false;
+      if(!finalTitle){
+        const videoId = extractYoutubeId(url);
+        finalTitle = videoId ? `YouTube ${videoId}` : "Untitled";
+        titleWarning = true;
+      }
       // Nama asset dan deskripsi sama-sama pakai judul asli dari YouTube (bukan
       // di-generate) — nama akan dipotong 30 karakter cuma untuk kebutuhan
       // display name Roblox (via clampAssetName di stageItem), sementara
       // deskripsi tetap menyimpan judul lengkap yang tidak terpotong.
       stageItem({ name: finalTitle, description: finalTitle, source: "youtube" }, blob);
-      toast("Convert berhasil — dengarkan preview lalu publish ke Roblox");
+      if(titleWarning){
+        toast("Judul YouTube tidak ditemukan — nama sementara dipakai, edit manual sebelum publish", true);
+      }else{
+        toast("Convert berhasil — dengarkan preview lalu publish ke Roblox");
+      }
     }catch(err){
       console.error(err);
       toast("Gagal menghubungi API convert — kemungkinan diblokir CORS atau server sedang down", true);

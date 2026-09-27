@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a1016'/%3E%3Ctext x='50' y='68' font-family='Arial' font-weight='900' font-size='58' fill='%237fe6d8' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/style.css">
 </head>
-<body>
+<body class="page-library">
 
 <div class="wave-field" aria-hidden="true">
   <div class="glow"></div>
@@ -18,12 +18,46 @@
   </svg>
 </div>
 
+<aside class="sidebar" aria-label="Navigasi utama">
+  <a class="sidebar-logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      Dashboard
+    </a>
+    <a href="upload.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+      Upload
+    </a>
+    <a href="library.html" class="nav-item sidebar-link active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      Library
+    </a>
+  </nav>
+  <div class="sidebar-divider"></div>
+  <nav class="sidebar-nav">
+    <a href="settings.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 13.5a1.7 1.7 0 000-3l1-1.7-1.7-1.7-1.7 1a1.7 1.7 0 00-3 0l-1-1.7H10l-1 1.7a1.7 1.7 0 00-3 0l-1.7-1L2.6 8.8l1 1.7a1.7 1.7 0 000 3l-1 1.7 1.7 1.7 1.7-1a1.7 1.7 0 003 0l1 1.7h3l1-1.7a1.7 1.7 0 003 0l1.7 1 1.7-1.7z"/></svg>
+      Pengaturan
+    </a>
+    <a href="owner.html" class="nav-item sidebar-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l7 4v6c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-4z"/></svg>
+      Owner Panel
+    </a>
+  </nav>
+  <div class="sidebar-spacer"></div>
+  <a class="sidebar-account" href="settings.html">
+    <span class="icon-btn" data-account-icon aria-hidden="true"></span>
+    <span class="sidebar-account-label">Akun Roblox</span>
+  </a>
+</aside>
+
 <div id="app" class="fade-in">
 
   <header class="topbar">
     <a class="logo" href="index.html"><span>Ba</span><span class="x">x</span><span>Dev</span></a>
     <div class="topbar-actions">
-      <a class="icon-btn" href="settings.html" title="Akun Roblox" aria-label="Akun Roblox">
+      <a class="icon-btn" href="settings.html" data-account-icon title="Akun Roblox" aria-label="Akun Roblox">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.6 19.6c1.15-3.55 4.05-5.6 7.4-5.6s6.25 2.05 7.4 5.6"/></svg>
       </a>
       <button class="icon-btn" id="btnMenu" title="Menu" aria-label="Menu">
@@ -117,6 +151,17 @@
           <div class="progress-bar"><i></i></div>
           <span class="progress-pct">0%</span>
         </div>
+        ${t.status==="published" && t.assetId ? `
+        <a class="asset-id-link" href="https://www.roblox.com/library/${encodeURIComponent(t.assetId)}" target="_blank" rel="noopener">
+          <span class="asset-id-lbl">Asset ID</span>
+          <span class="asset-id-val">${escapeHtml(t.assetId)}</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h6"/><path d="M15 3h6v6M10 14L21 3"/></svg>
+        </a>` : ""}
+        ${t.status==="published" && !t.assetId && t.operationPath ? `
+        <div class="asset-id-pending">
+          <span>ID aset masih diproses Roblox (moderasi audio)...</span>
+          <button class="btn btn-ghost btn-check-status" style="padding:6px 12px;font-size:.76rem;">Cek Status</button>
+        </div>` : ""}
         <div class="track-actions">
           <button class="btn btn-primary btn-publish" ${t.status==="publishing"?"disabled":""}>${t.status==="published" ? "Publish Ulang" : "Publish ke Roblox"}</button>
           <button class="btn btn-danger btn-remove">Hapus</button>
@@ -164,6 +209,29 @@
         renderPlanBadges();
       });
       row.querySelector(".btn-publish").addEventListener("click", ()=>publishTrack(id));
+
+      const btnCheck = row.querySelector(".btn-check-status");
+      if(btnCheck){
+        btnCheck.addEventListener("click", async ()=>{
+          btnCheck.disabled = true;
+          btnCheck.textContent = "Mengecek...";
+          const result = await BaxdevRoblox.checkAssetStatus(id);
+          if(!result.ok){
+            toast(result.message || "Gagal cek status", true);
+            btnCheck.disabled = false;
+            btnCheck.textContent = "Cek Status";
+            return;
+          }
+          if(!result.done){
+            toast("Masih diproses Roblox, coba lagi sebentar lagi.");
+            btnCheck.disabled = false;
+            btnCheck.textContent = "Cek Status";
+            return;
+          }
+          toast(result.error ? (result.message || "Roblox menolak asset ini") : `Asset ID siap: ${result.assetId}`, !!result.error);
+          renderLibrary();
+        });
+      }
     });
   }
 
@@ -205,7 +273,7 @@
       return;
     }
 
-    toast(result.ok ? "Berhasil dipublish ke Roblox" : "Publish gagal, lihat detail di Library", !result.ok);
+    toast(result.ok ? (result.message || "Berhasil dipublish ke Roblox") : "Publish gagal, lihat detail di Library", !result.ok);
     renderLibrary();
     renderPlanBadges();
   }

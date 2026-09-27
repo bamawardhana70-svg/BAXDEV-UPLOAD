@@ -103,12 +103,55 @@
    * @param {Blob} blob audio blob to upload
    * @param {Object} settings
    * @param {(pct:number)=>void} [onProgress]
-   * @returns {Promise<{ok:boolean, message:string}>}
+   * @returns {Promise<{ok:boolean, message:string, assetId?:string|null, pending?:boolean, operationPath?:string|null}>}
    */
   async function publish(track, blob, settings, onProgress) {
     if (!settings.userId) return { ok: false, message: "Roblox User ID belum diisi di Pengaturan." };
     if (!settings.apiKey) return { ok: false, message: "Roblox API Key belum diisi di Pengaturan." };
     return xhrUpload("/api/roblox-upload", buildForm(track, blob, settings), onProgress);
+  }
+
+  /**
+   * Cek ulang status operation Roblox untuk track yang tadi publish-nya
+   * "pending" (assetId belum keluar karena masih diproses/dimoderasi).
+   * @param {string} id track id di Baxdev.getLibrary()
+   * @returns {Promise<{ok:boolean, done?:boolean, assetId?:string|null, message?:string}>}
+   */
+  async function checkAssetStatus(id) {
+    const settings = Baxdev.getSettings();
+    let library = Baxdev.getLibrary();
+    const track = library.find((t) => t.id === id);
+    if (!track || !track.operationPath) return { ok: false, message: "Tidak ada operation yang perlu dicek." };
+    if (!settings.apiKey) return { ok: false, message: "API Key belum diisi di Pengaturan." };
+
+    let data;
+    try {
+      const res = await fetch("/api/roblox-asset-status", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ apiKey: settings.apiKey, operationPath: track.operationPath })
+      });
+      data = await res.json();
+    } catch (err) {
+      return { ok: false, message: "Gagal menghubungi server: " + (err.message || "network error") };
+    }
+
+    if (!data.ok) return data;
+    if (!data.done) return { ok: true, done: false, message: data.message };
+
+    library = Baxdev.getLibrary();
+    const t = library.find((x) => x.id === id);
+    if (t) {
+      if (data.error) {
+        t.status = "failed";
+        t.message = data.message;
+      } else {
+        t.assetId = data.assetId || null;
+        t.operationPath = null;
+      }
+      Baxdev.saveLibrary(library);
+    }
+    return data;
   }
 
   /**
@@ -131,7 +174,7 @@
 
     if (!Baxdev.isVIP()) {
       const q = Baxdev.getQuota();
-      if (q.count >= Baxdev.FREE_DAILY_PUBLISH) return { ok: false, code: "quota", message: "Batas publish harian Free Plan tercapai." };
+      if (q.count >= Baxdev.FREE_UPLOAD_LIMIT) return { ok: false, code: "quota", message: `Batas ${Baxdev.FREE_UPLOAD_LIMIT} upload akun Free tercapai. Jadi VIP lewat Owner Panel untuk upload tanpa batas.` };
     }
 
     track.status = "publishing";
@@ -145,7 +188,14 @@
       const result = await publish(track, blob, settings, hooks.onProgress);
       library = Baxdev.getLibrary();
       const t = library.find((x) => x.id === id);
-      if (t) { t.status = result.ok ? "published" : "failed"; t.message = result.message; }
+      if (t) {
+        t.status = result.ok ? "published" : "failed";
+        t.message = result.message;
+        if (result.ok) {
+          t.assetId = result.assetId || null;
+          t.operationPath = result.pending ? result.operationPath : null;
+        }
+      }
       if (result.ok && !Baxdev.isVIP()) Baxdev.incrementQuota();
       Baxdev.saveLibrary(library);
       return { ok: result.ok, code: result.ok ? "done" : "failed", message: result.message };
@@ -179,7 +229,7 @@
     }
     if (!Baxdev.isVIP()) {
       const q = Baxdev.getQuota();
-      if (q.count >= Baxdev.FREE_DAILY_PUBLISH) return { ok: false, code: "quota", message: "Batas publish harian Free Plan tercapai." };
+      if (q.count >= Baxdev.FREE_UPLOAD_LIMIT) return { ok: false, code: "quota", message: `Batas ${Baxdev.FREE_UPLOAD_LIMIT} upload akun Free tercapai. Jadi VIP lewat Owner Panel untuk upload tanpa batas.` };
     }
 
     const name = Baxdev.clampAssetName(meta.name);
@@ -196,7 +246,9 @@
       source: meta.source,
       speed: meta.speed || 1,
       status: "published",
-      message: result.message
+      message: result.message,
+      assetId: result.assetId || null,
+      operationPath: result.pending ? result.operationPath : null
     };
     await Baxdev.saveBlob(track.id, blob);
     const library = Baxdev.getLibrary();
@@ -207,5 +259,5 @@
     return { ok: true, code: "done", message: result.message, track };
   }
 
-  global.BaxdevRoblox = { testConnection, publish, publishTrackById, publishNewTrack };
+  global.BaxdevRoblox = { testConnection, publish, publishTrackById, publishNewTrack, checkAssetStatus };
 })(window);
