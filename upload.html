@@ -111,7 +111,7 @@
           <button class="speed-chip" data-speed="1.75">1.75×</button>
           <button class="speed-chip" data-speed="2">2×</button>
         </div>
-        <p class="hint" style="margin-top:0;">Dengarkan preview di bawah secara real-time saat ganti kecepatan. Baru dibakukan jadi file (WAV untuk selain 1×) saat kamu tekan "Publish ke Roblox".</p>
+        <p class="hint" style="margin-top:0;">Dengarkan preview di bawah secara real-time saat ganti kecepatan. Baru dibakukan jadi file MP3 (tetap MP3 di semua kecepatan, bukan WAV) saat kamu tekan "Publish ke Roblox".</p>
       </div>
     </section>
 
@@ -162,6 +162,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="assets/storage.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.0/lame.min.js"></script>
 <script src="assets/audio-speed.js"></script>
 <script src="assets/roblox.js"></script>
 <script src="assets/player.js"></script>
@@ -193,7 +194,7 @@
       chip.classList.add("active");
       currentSpeed = parseFloat(chip.dataset.speed);
       // Live-update every staged (not-yet-committed) preview so switching
-      // chips is heard immediately, without waiting for WAV processing.
+      // chips is heard immediately, without waiting for MP3 encoding.
       stagingHandles.forEach(s => s.playerHandle.setSpeed(currentSpeed));
     });
   });
@@ -219,7 +220,14 @@
   function stageItem(meta, blob){
     const id = "stg_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
     const initialName = Baxdev.clampAssetName(meta.name);
-    document.getElementById("stagingCard").style.display = "block";
+    const stagingCard = document.getElementById("stagingCard");
+    const wasHidden = stagingCard.style.display === "none";
+    stagingCard.style.display = "block";
+    // Item pertama yang di-stage: scroll halus ke kartu preview di bawah,
+    // supaya kelihatan jelas kalau preview & tombol publish muncul di sana.
+    if(wasHidden){
+      requestAnimationFrame(()=> stagingCard.scrollIntoView({ behavior:"smooth", block:"start" }));
+    }
 
     const row = document.createElement("div");
     row.className = "track";

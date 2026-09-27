@@ -2,55 +2,52 @@
   BaxDev — audio-speed.js
   Applies a real playback-speed change to an audio Blob before it's stored/published.
   Uses OfflineAudioContext + AudioBufferSourceNode.playbackRate (native Web Audio API,
-  no external library). Speed 1x is a no-op passthrough. Output is 16-bit PCM WAV.
+  no external library) to render the sped-up/slowed-down PCM, then encodes that PCM
+  straight to MP3 with lamejs — so the output format stays MP3 at every speed, never WAV.
+  Speed 1x is a no-op passthrough (original file/bytes untouched).
+
+  Requires <script> tags for lamejs (lame.min.js) to be loaded BEFORE this file.
 */
 (function (global) {
   "use strict";
 
-  function audioBufferToWavBlob(buffer) {
-    const numChannels = buffer.numberOfChannels;
+  function floatTo16BitPCM(channelData) {
+    const out = new Int16Array(channelData.length);
+    for (let i = 0; i < channelData.length; i++) {
+      let s = Math.max(-1, Math.min(1, channelData[i]));
+      out[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+    }
+    return out;
+  }
+
+  function encodeMp3(buffer) {
+    if (typeof lamejs === "undefined") {
+      throw new Error("Encoder MP3 (lamejs) belum termuat. Pastikan <script> lame.min.js ada sebelum assets/audio-speed.js.");
+    }
+    const numChannels = Math.min(2, buffer.numberOfChannels);
     const sampleRate = buffer.sampleRate;
-    const numFrames = buffer.length;
-    const bytesPerSample = 2;
-    const blockAlign = numChannels * bytesPerSample;
-    const dataSize = numFrames * blockAlign;
-    const bufferSize = 44 + dataSize;
+    const kbps = 128;
+    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, kbps);
 
-    const ab = new ArrayBuffer(bufferSize);
-    const view = new DataView(ab);
+    const left = floatTo16BitPCM(buffer.getChannelData(0));
+    const right = numChannels > 1 ? floatTo16BitPCM(buffer.getChannelData(1)) : null;
 
-    function writeStr(offset, str) {
-      for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-    }
-
-    writeStr(0, "RIFF");
-    view.setUint32(4, 36 + dataSize, true);
-    writeStr(8, "WAVE");
-    writeStr(12, "fmt ");
-    view.setUint32(16, 16, true);
-    view.setUint16(20, 1, true); // PCM
-    view.setUint16(22, numChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * blockAlign, true);
-    view.setUint16(32, blockAlign, true);
-    view.setUint16(34, bytesPerSample * 8, true);
-    writeStr(36, "data");
-    view.setUint32(40, dataSize, true);
-
-    const channelData = [];
-    for (let ch = 0; ch < numChannels; ch++) channelData.push(buffer.getChannelData(ch));
-
-    let offset = 44;
-    for (let i = 0; i < numFrames; i++) {
-      for (let ch = 0; ch < numChannels; ch++) {
-        let sample = channelData[ch][i];
-        sample = Math.max(-1, Math.min(1, sample));
-        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
-        offset += 2;
+    const blockSize = 1152; // kelipatan 576, disarankan lamejs
+    const chunks = [];
+    for (let i = 0; i < left.length; i += blockSize) {
+      const leftChunk = left.subarray(i, i + blockSize);
+      let mp3buf;
+      if (right) {
+        mp3buf = encoder.encodeBuffer(leftChunk, right.subarray(i, i + blockSize));
+      } else {
+        mp3buf = encoder.encodeBuffer(leftChunk);
       }
+      if (mp3buf.length > 0) chunks.push(new Int8Array(mp3buf));
     }
+    const tail = encoder.flush();
+    if (tail.length > 0) chunks.push(new Int8Array(tail));
 
-    return new Blob([ab], { type: "audio/wav" });
+    return new Blob(chunks, { type: "audio/mpeg" });
   }
 
   /**
@@ -84,8 +81,8 @@
     src.start(0);
 
     const rendered = await offlineCtx.startRendering();
-    const wavBlob = audioBufferToWavBlob(rendered);
-    return { blob: wavBlob, mime: "audio/wav", ext: ".wav", processed: true };
+    const mp3Blob = encodeMp3(rendered);
+    return { blob: mp3Blob, mime: "audio/mpeg", ext: ".mp3", processed: true };
   }
 
   function guessExt(mime) {

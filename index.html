@@ -75,6 +75,30 @@
   </header>
 
   <main>
+    <p class="eyebrow-plain" style="margin-bottom:2px;">Workspace / Overview</p>
+
+    <div class="hero-row">
+      <div class="hero-copy">
+        <p class="eyebrow-plain">BaxDev / Roblox Audio Studio</p>
+        <h1 class="hero">Ruang untuk<br>suara kamu.</h1>
+        <p class="hero-sub">Dari file audio ke dunia Roblox. Upload, atur, dan kelola dalam satu studio — semua tersimpan di perangkat ini, tanpa akun.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="upload.html">Upload Audio</a>
+          <a class="btn btn-ghost" href="library.html">Buka Library</a>
+        </div>
+      </div>
+
+      <div class="brand-badge" aria-hidden="true">
+        <span class="bb-eyebrow">BAXDEV AUDIO</span>
+        <span class="bb-wave">
+          <i style="height:30%"></i><i style="height:55%"></i><i style="height:80%"></i><i style="height:45%"></i>
+          <i style="height:95%"></i><i style="height:60%"></i><i style="height:35%"></i><i style="height:70%"></i>
+          <i style="height:50%"></i><i style="height:85%"></i><i style="height:40%"></i>
+        </span>
+        <span class="bb-tag">Suara kamu, dunia Roblox.</span>
+      </div>
+    </div>
+
     <section class="welcome-card" id="welcomeCard" style="display:none;">
       <div class="welcome-avatar" id="welcomeAvatar"></div>
       <div class="welcome-text">
@@ -84,39 +108,65 @@
       </div>
     </section>
 
-    <p class="eyebrow-plain">BaxDev / Roblox Audio Studio</p>
-    <h1 class="hero">Suara kamu,<br>siap dipakai di Roblox.</h1>
-    <p class="hero-sub">Convert audio dari file atau YouTube, atur kecepatan, lalu publish langsung jadi Roblox Asset — semua tersimpan di perangkat ini, tanpa akun.</p>
-    <div class="btn-row">
-      <a class="btn btn-primary" href="upload.html">Upload Audio</a>
-      <a class="btn btn-ghost" href="library.html">Buka Library</a>
-    </div>
-
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
-        <div class="num" id="statTotal">0</div>
+        <div class="stat-top">
+          <div class="num" id="statTotal">0</div>
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        </div>
         <div class="lbl">Total Audio</div>
       </div>
       <div class="stat-card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
-        <div class="num" id="statPublished">0</div>
+        <div class="stat-top">
+          <div class="num" id="statPublished">0</div>
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div>
+        </div>
         <div class="lbl">Published</div>
       </div>
       <div class="stat-card">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="12" r="1.6"/><path d="M13 10.2h5M13 13.8h3"/></svg></div>
-        <div class="num num-id" id="statRobloxUser" title="Klik untuk salin">—</div>
+        <div class="stat-top">
+          <div class="num num-id" id="statRobloxUser" title="Klik untuk salin">—</div>
+          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="12" r="1.6"/><path d="M13 10.2h5M13 13.8h3"/></svg></div>
+        </div>
         <div class="lbl">Roblox User</div>
       </div>
     </div>
 
     <div class="plan-card">
       <div>
-        <div class="plan-lbl">AKUN INI</div>
+        <div class="plan-lbl">AKUN KAMU</div>
         <div class="plan-name" id="planName">Free Plan</div>
         <div class="plan-quota" id="planQuota">0/10 upload terpakai</div>
       </div>
-      <a class="btn btn-ghost" href="settings.html">Pengaturan</a>
+      <a class="btn btn-primary" href="settings.html" id="planCta">Upgrade Premium</a>
+    </div>
+
+    <div class="quickstart-head">
+      <h2>Mulai berkarya</h2>
+      <span>Semua yang kamu butuhkan</span>
+    </div>
+    <div class="quickstart-grid">
+      <a class="quickstart-card" href="upload.html">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></div>
+        <div>
+          <div class="qc-title">Upload Audio</div>
+          <div class="qc-sub">Convert &amp; publish ke Roblox</div>
+        </div>
+      </a>
+      <a class="quickstart-card" href="library.html">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+        <div>
+          <div class="qc-title">Library</div>
+          <div class="qc-sub">Kelola audio tersimpan</div>
+        </div>
+      </a>
+      <a class="quickstart-card" href="settings.html">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="12" r="1.6"/><path d="M13 10.2h5M13 13.8h3"/></svg></div>
+        <div>
+          <div class="qc-title">Koneksi Roblox</div>
+          <div class="qc-sub">Set API key &amp; User ID</div>
+        </div>
+      </a>
     </div>
   </main>
 

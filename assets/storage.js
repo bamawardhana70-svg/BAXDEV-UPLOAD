@@ -216,6 +216,12 @@
     if (planQuota) {
       planQuota.textContent = vip ? "Upload tanpa batas" : `${q.count}/${FREE_UPLOAD_LIMIT} upload terpakai`;
     }
+    const planCta = document.getElementById("planCta");
+    if (planCta) {
+      planCta.textContent = vip ? "Pengaturan" : "Upgrade Premium";
+      planCta.classList.toggle("btn-primary", !vip);
+      planCta.classList.toggle("btn-ghost", vip);
+    }
     // Kartu stat ketiga di Dashboard menampilkan Roblox User ID yang
     // dipakai (dari Pengaturan), bukan label plan lagi — info plan sudah
     // ada di plan-card di bawahnya. Bisa diklik buat salin ID kalau sudah diisi.
